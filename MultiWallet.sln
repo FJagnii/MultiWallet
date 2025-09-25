@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiWallet.Api", "MultiWallet.Api\MultiWallet.Api.csproj", "{214FB3C4-F733-42C4-BE98-A734835FBCF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiWallet.Tests", "MultiWallet.Tests\MultiWallet.Tests.csproj", "{8CC1EE92-4E47-49CF-9881-79F7C9E0BB52}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{214FB3C4-F733-42C4-BE98-A734835FBCF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{214FB3C4-F733-42C4-BE98-A734835FBCF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{214FB3C4-F733-42C4-BE98-A734835FBCF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{214FB3C4-F733-42C4-BE98-A734835FBCF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC1EE92-4E47-49CF-9881-79F7C9E0BB52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC1EE92-4E47-49CF-9881-79F7C9E0BB52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC1EE92-4E47-49CF-9881-79F7C9E0BB52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC1EE92-4E47-49CF-9881-79F7C9E0BB52}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
