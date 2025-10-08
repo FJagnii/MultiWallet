@@ -29,12 +29,14 @@ public class WalletLockProviderTests
         var provider = new WalletLockProvider();
         bool task2AcquiredLock = false;
         WalletLockTimeoutException blockedTaskException = null;
+        var task1AcquiredLock = new TaskCompletionSource<bool>();
 
         //A
         var task1 = Task.Run(async () =>
         {
             using (await provider.LockWalletAsync(1, TimeSpan.FromMilliseconds(100)))
             {
+                task1AcquiredLock.SetResult(true);
                 //task1 blokuje portfel i utrzyma blokadę przez 500ms
                 await Task.Delay(500);
             }
@@ -42,6 +44,9 @@ public class WalletLockProviderTests
         
         var task2 = Task.Run(async () =>
         {
+            //czekanie, aż task1 spokojnie wystartuje i zablokuje portfel
+            await task1AcquiredLock.Task;
+            
             try
             {
                 //task2 próbuje zablokować portfel i oczekuje blokady w ciągu 100ms (co się nie uda, bo portfel został zajęty przez task1 i będzie zajęty przez 500ms)
