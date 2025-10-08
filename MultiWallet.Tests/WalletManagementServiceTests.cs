@@ -6,19 +6,19 @@ using Microsoft.Extensions.Logging;
 
 namespace MultiWallet.Tests;
 
-public class WalletServiceTests
+public class WalletManagementServiceTests
 {
     private readonly Mock<IExchangeRatesRepository> _exchangeRatesRepositoryMock;
     private readonly Mock<IWalletRepository> _walletRepositoryMock;
-    private readonly WalletService _walletService;
+    private readonly WalletManagementService _walletService;
 
-    public WalletServiceTests()
+    public WalletManagementServiceTests()
     {
         _exchangeRatesRepositoryMock = new Mock<IExchangeRatesRepository>();
         _walletRepositoryMock = new Mock<IWalletRepository>();
-        var loggerMock = new Mock<ILogger<WalletService>>();
+        var loggerMock = new Mock<ILogger<WalletManagementService>>();
 
-        _walletService = new WalletService(
+        _walletService = new WalletManagementService(
             _exchangeRatesRepositoryMock.Object,
             loggerMock.Object,
             _walletRepositoryMock.Object

@@ -10,11 +10,11 @@ namespace MultiWallet.Api.Controllers;
 [Route("api/Wallets/{walletId}")]
 public class TransactionsController : ControllerBase
 {
-    private readonly IWalletTransactionService _walletService;
+    private readonly IWalletTransactionService _transactionService;
     
-    public TransactionsController(IWalletTransactionService walletService)
+    public TransactionsController(IWalletTransactionService transactionService)
     {
-        _walletService = walletService;
+        _transactionService = transactionService;
     }
     
     [HttpPost("addFunds")]
@@ -25,7 +25,7 @@ public class TransactionsController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        var fundsAdded = await _walletService.AddFundsAsync(walletId, walletOperationRequest.CurrencyCode, walletOperationRequest.Amount);
+        var fundsAdded = await _transactionService.AddFundsAsync(walletId, walletOperationRequest.CurrencyCode, walletOperationRequest.Amount);
         
         if (fundsAdded.ResponseCode == WalletOperationResponseCode.WalletNotFound)
         {
@@ -48,7 +48,7 @@ public class TransactionsController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        var fundsWithdrawn = await _walletService.WithdrawFundsAsync(walletId, withdrawFundsRequest.CurrencyCode, withdrawFundsRequest.Amount);
+        var fundsWithdrawn = await _transactionService.WithdrawFundsAsync(walletId, withdrawFundsRequest.CurrencyCode, withdrawFundsRequest.Amount);
         
         if (fundsWithdrawn.ResponseCode == WalletOperationResponseCode.WalletNotFound)
         {
@@ -86,7 +86,7 @@ public class TransactionsController : ControllerBase
             return BadRequest("Nie można wymienić waluty na tę samą walutę");
         }
 
-        var fundsExchanged = await _walletService.ExchangeFromFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
+        var fundsExchanged = await _transactionService.ExchangeFromFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
             exchangeFundsRequest.TargetCurrencyCode, exchangeFundsRequest.Amount);
 
         if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.WalletNotFound)
@@ -130,7 +130,7 @@ public class TransactionsController : ControllerBase
             return BadRequest("Nie można wymienić waluty na tę samą walutę");
         }
 
-        var fundsExchanged = await _walletService.ExchangeToFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
+        var fundsExchanged = await _transactionService.ExchangeToFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
             exchangeFundsRequest.TargetCurrencyCode, exchangeFundsRequest.Amount);
 
         if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.WalletNotFound)

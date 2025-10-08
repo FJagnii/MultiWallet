@@ -9,9 +9,9 @@ namespace MultiWallet.Api.Controllers;
 [Route("api/[controller]")]
 public class WalletsController : ControllerBase
 {
-    private readonly IWalletService _walletService;
+    private readonly IWalletManagementService _walletService;
 
-    public WalletsController(IWalletService walletService)
+    public WalletsController(IWalletManagementService walletService)
     {
         _walletService = walletService;
     }

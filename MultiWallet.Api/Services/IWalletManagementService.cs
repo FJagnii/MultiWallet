@@ -1,9 +1,8 @@
 ﻿using MultiWallet.Api.Models;
-using MultiWallet.Api.Services.WalletOperationResponses;
 
 namespace MultiWallet.Api.Services;
 
-public interface IWalletService
+public interface IWalletManagementService
 {
     /// <summary>
     /// Tworzy nowy wielowalutowy portfel

@@ -3,13 +3,13 @@ using MultiWallet.Api.Repositories;
 
 namespace MultiWallet.Api.Services;
 
-public class WalletService : IWalletService
+public class WalletManagementService : IWalletManagementService
 {
     private readonly IExchangeRatesRepository _exchangeRatesRepository;
-    private readonly ILogger<WalletService> _logger;
+    private readonly ILogger<WalletManagementService> _logger;
     private readonly IWalletRepository _walletRepository;
     
-    public WalletService(IExchangeRatesRepository exchangeRatesRepository, ILogger<WalletService> logger,
+    public WalletManagementService(IExchangeRatesRepository exchangeRatesRepository, ILogger<WalletManagementService> logger,
         IWalletRepository walletRepository)
     {
         _exchangeRatesRepository = exchangeRatesRepository;

@@ -10,7 +10,7 @@ public class WalletTransactionServiceTests
 {
     private readonly Mock<IExchangeRatesRepository> _exchangeRatesRepositoryMock;
     private readonly Mock<IWalletRepository> _walletRepositoryMock;
-    private readonly WalletTransactionService _walletService;
+    private readonly WalletTransactionService _transactionService;
     
     public WalletTransactionServiceTests()
     {
@@ -18,7 +18,7 @@ public class WalletTransactionServiceTests
         _walletRepositoryMock = new Mock<IWalletRepository>();
         var lockerMock = new Mock<IWalletLockProvider>();
 
-        _walletService = new WalletTransactionService(
+        _transactionService = new WalletTransactionService(
             _exchangeRatesRepositoryMock.Object,
             _walletRepositoryMock.Object,
             lockerMock.Object
@@ -32,7 +32,7 @@ public class WalletTransactionServiceTests
         _walletRepositoryMock.Setup(r => r.GetWalletAsync(1)).ReturnsAsync((Wallet)null);
 
         //A
-        var result = await _walletService.AddFundsAsync(1, "USD", 100m);
+        var result = await _transactionService.AddFundsAsync(1, "USD", 100m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.WalletNotFound, result.ResponseCode);
@@ -47,7 +47,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("XXX")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.AddFundsAsync(1, "XXX", 100m);
+        var result = await _transactionService.AddFundsAsync(1, "XXX", 100m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.CurrencyDoesNotExist, result.ResponseCode);
@@ -71,7 +71,7 @@ public class WalletTransactionServiceTests
             .ReturnsAsync(new NbpCurrencyData() { Code = "USD", Currency = "Dolar", Mid = 4m });
 
         //A
-        var result = await _walletService.AddFundsAsync(1, "USD", 25m);
+        var result = await _transactionService.AddFundsAsync(1, "USD", 25m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.Success, result.ResponseCode);
@@ -96,7 +96,7 @@ public class WalletTransactionServiceTests
             .ReturnsAsync(new NbpCurrencyData() { Code = "EUR", Currency = "Euro", Mid = 4m });
 
         //A
-        var result = await _walletService.AddFundsAsync(1, "EUR", 10m);
+        var result = await _transactionService.AddFundsAsync(1, "EUR", 10m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.Success, result.ResponseCode);
@@ -116,7 +116,7 @@ public class WalletTransactionServiceTests
         _walletRepositoryMock.Setup(r => r.GetWalletAsync(1)).ReturnsAsync((Wallet)null);
 
         //A
-        var result = await _walletService.WithdrawFundsAsync(1, "USD", 100m);
+        var result = await _transactionService.WithdrawFundsAsync(1, "USD", 100m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.WalletNotFound, result.ResponseCode);
@@ -131,7 +131,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("XXX")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.WithdrawFundsAsync(1, "XXX", 100m);
+        var result = await _transactionService.WithdrawFundsAsync(1, "XXX", 100m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.CurrencyDoesNotExist, result.ResponseCode);
@@ -152,7 +152,7 @@ public class WalletTransactionServiceTests
             .ReturnsAsync(new NbpCurrencyData() { Code = "USD", Currency = "Dolar", Mid = 4m });
 
         //A
-        var result = await _walletService.WithdrawFundsAsync(1, "USD", 25m);
+        var result = await _transactionService.WithdrawFundsAsync(1, "USD", 25m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.CurrencyNotInWallet, result.ResponseCode);
@@ -176,7 +176,7 @@ public class WalletTransactionServiceTests
             .ReturnsAsync(new NbpCurrencyData() { Code = "USD", Currency = "Dolar", Mid = 4m });
 
         //A
-        var result = await _walletService.WithdrawFundsAsync(1, "USD", 100m);
+        var result = await _transactionService.WithdrawFundsAsync(1, "USD", 100m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.NotEnoughFunds, result.ResponseCode);
@@ -200,7 +200,7 @@ public class WalletTransactionServiceTests
             .ReturnsAsync(new NbpCurrencyData() { Code = "USD", Currency = "Dolar", Mid = 4m });
 
         //A
-        var result = await _walletService.WithdrawFundsAsync(1, "USD", 10m);
+        var result = await _transactionService.WithdrawFundsAsync(1, "USD", 10m);
 
         //A
         Assert.Equal(WalletOperationResponseCode.Success, result.ResponseCode);
@@ -219,7 +219,7 @@ public class WalletTransactionServiceTests
         _walletRepositoryMock.Setup(r => r.GetWalletAsync(1)).ReturnsAsync((Wallet)null);
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.WalletNotFound, result.ResponseCode);
@@ -233,7 +233,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("USD")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.SourceCurrencyDoesNotExist, result.ResponseCode);
@@ -248,7 +248,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("XYZ")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "XYZ", 100m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "XYZ", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.TargetCurrencyDoesNotExist, result.ResponseCode);
@@ -265,7 +265,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.SourceCurrencyNotInWallet, result.ResponseCode);
@@ -289,7 +289,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.NotEnoughFunds, result.ResponseCode);
@@ -311,7 +311,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 40m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 40m);
 
         //A
         //przy zadanych przelicznikach 40 USD = 32 EUR
@@ -340,7 +340,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeFromFundsAsync(1, "USD", "EUR", 40m);
+        var result = await _transactionService.ExchangeFromFundsAsync(1, "USD", "EUR", 40m);
 
         //A
         //przy zadanych przelicznikach 40 USD = 32 EUR
@@ -362,7 +362,7 @@ public class WalletTransactionServiceTests
         _walletRepositoryMock.Setup(r => r.GetWalletAsync(1)).ReturnsAsync((Wallet)null);
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.WalletNotFound, result.ResponseCode);
@@ -376,7 +376,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("USD")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.SourceCurrencyDoesNotExist, result.ResponseCode);
@@ -391,7 +391,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("XYZ")).ReturnsAsync((NbpCurrencyData)null);
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "XYZ", 100m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "XYZ", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.TargetCurrencyDoesNotExist, result.ResponseCode);
@@ -408,7 +408,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 100m);
 
         //A
         Assert.Equal(ExchangeFundsResponseCode.SourceCurrencyNotInWallet, result.ResponseCode);
@@ -432,7 +432,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
 
         //A
         //przy zadanych przelicznikach 50 EUR = 62.5 USD
@@ -455,7 +455,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
 
         //A
         //przy zadanych przelicznikach 50 EUR = 62.5 USD
@@ -484,7 +484,7 @@ public class WalletTransactionServiceTests
         _exchangeRatesRepositoryMock.Setup(r => r.GetCurrencyDataAsync("EUR")).ReturnsAsync(new NbpCurrencyData { Code = "EUR", Mid = 5m });
 
         //A
-        var result = await _walletService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
+        var result = await _transactionService.ExchangeToFundsAsync(1, "USD", "EUR", 50m);
 
         //A
         //przy zadanych przelicznikach 50 EUR = 62.5 USD

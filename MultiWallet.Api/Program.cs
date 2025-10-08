@@ -37,7 +37,7 @@ else
 }
 
 builder.Services.AddSingleton<IWalletLockProvider, WalletLockProvider>();
-builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IWalletManagementService, WalletManagementService>();
 builder.Services.AddScoped<IWalletTransactionService, WalletTransactionService>();
 
 builder.Services.AddHostedService<NbpExchangeRatesFetcher>();
