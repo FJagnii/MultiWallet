@@ -10,13 +10,14 @@ public class FileWalletRepository : IWalletRepository
 {
     private readonly string _walletsFilePath;
     private List<Wallet> _wallets;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<FileWalletRepository> _logger;
 
     public FileWalletRepository(IOptions<WalletsFileConfig> config, ILogger<FileWalletRepository> logger)
     {
         _walletsFilePath = config.Value.FilePath;
         _logger = logger;
+        _semaphore = new(1, 1);
 
         if (File.Exists(_walletsFilePath))
         {
