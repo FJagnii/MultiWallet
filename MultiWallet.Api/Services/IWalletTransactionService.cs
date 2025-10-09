@@ -1,4 +1,4 @@
-﻿using MultiWallet.Api.Services.WalletOperationResponses;
+﻿using MultiWallet.Api.Models;
 
 namespace MultiWallet.Api.Services;
 
@@ -10,8 +10,8 @@ public interface IWalletTransactionService
     /// <param name="walletId">Identyfikator portfela, który ma być zasilony</param>
     /// <param name="currencyCode">Kod waluty, która ma zostać zasilona</param>
     /// <param name="amount">Wartość środków, która ma zostać zasilona</param>
-    /// <returns>Kod statusowy i, w przypadku sukcesu, wartość środków w podanej walucie po operacji</returns>
-    Task<AddFundsResponse> AddFundsAsync(int walletId, string currencyCode, decimal amount);
+    /// <returns>Wartość środków w podanej walucie po operacji</returns>
+    Task<CurrencyData> AddFundsAsync(int walletId, string currencyCode, decimal amount);
 
     /// <summary>
     /// Pobiera środki z portfela w podanej walucie
@@ -19,8 +19,8 @@ public interface IWalletTransactionService
     /// <param name="walletId">Identyfikator portfela, z którego mają zostać pobrane środki</param>
     /// <param name="currencyCode">Kod waluty, w której mają zostać pobrane środki</param>
     /// <param name="amount">Wartość środków, która ma zostać pobrana</param>
-    /// <returns>Kod statusowy i, w przypadku sukcesu, wartość środków w podanej walucie po operacji</returns>
-    Task<WithdrawFundsResponse> WithdrawFundsAsync(int walletId, string currencyCode, decimal amount);
+    /// <returns>Wartość środków w podanej walucie po operacji</returns>
+    Task<CurrencyData> WithdrawFundsAsync(int walletId, string currencyCode, decimal amount);
 
     /// <summary>
     /// Wymienia środki w podanej kwocie z waluty źródłowej na walutę docelową
@@ -29,8 +29,8 @@ public interface IWalletTransactionService
     /// <param name="sourceCurrencyCode">Kod waluty, z której mają zostać wymienione środki</param>
     /// <param name="targetCurrencyCode">Kod waluty, w której mają być wymienione środki</param>
     /// <param name="amount">Wartość środków, z których ma nastąpić wymiana</param>
-    /// <returns>Kod statusowy i, w przypadku sukcesu, wartość środków w walucie źródłowej i walucie docelowej po operacji</returns>
-    Task<ExchangeFundsResponse> ExchangeFromFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
+    /// <returns>Wartość środków w walucie źródłowej i walucie docelowej po operacji</returns>
+    Task<(CurrencyData finalizedSourceCurrency, CurrencyData finalizedTargetCurrency)> ExchangeFromFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
         decimal amount);
 
     /// <summary>
@@ -40,7 +40,7 @@ public interface IWalletTransactionService
     /// <param name="sourceCurrencyCode">Kod waluty, z której mają zostać wymienione środki</param>
     /// <param name="targetCurrencyCode">Kod waluty, w której mają być wymienione środki</param>
     /// <param name="amount">Docelowa wartość środków po wymianie</param>
-    /// <returns>Kod statusowy i, w przypadku sukcesu, wartość środków w walucie źródłowej i walucie docelowej po operacji</returns>
-    Task<ExchangeFundsResponse> ExchangeToFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
+    /// <returns>Wartość środków w walucie źródłowej i walucie docelowej po operacji</returns>
+    Task<(CurrencyData finalizedSourceCurrency, CurrencyData finalizedTargetCurrency)> ExchangeToFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
         decimal amount);
 }

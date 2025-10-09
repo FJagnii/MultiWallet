@@ -1,6 +1,6 @@
-﻿using MultiWallet.Api.Models;
+﻿using MultiWallet.Api.Exceptions;
+using MultiWallet.Api.Models;
 using MultiWallet.Api.Repositories;
-using MultiWallet.Api.Services.WalletOperationResponses;
 
 namespace MultiWallet.Api.Services;
 
@@ -19,96 +19,96 @@ public class WalletTransactionService : IWalletTransactionService
         _lockProvider = lockProvider;
     }
     
-    public async Task<AddFundsResponse> AddFundsAsync(int walletId, string currencyCode, decimal amount)
+    public async Task<CurrencyData> AddFundsAsync(int walletId, string currencyCode, decimal amount)
     {
         using (await _lockProvider.LockWalletAsync(walletId, _waitForLockTimeout))
         {
             var wallet = await _walletRepository.GetWalletAsync(walletId);
             if (wallet == null)
             {
-                return AddFundsResponse.WalletNotFound();
+                throw new WalletNotFoundException(walletId);
             }
 
             var currencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(currencyCode);
             if (currencyData == null)
             {
-                return AddFundsResponse.CurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(currencyCode);
             }
 
             var currencyToAddFundsTo = GetOrCreateCurrencyInWallet(wallet, currencyData);
             currencyToAddFundsTo.Amount += amount;
 
             await _walletRepository.UpdateWalletAsync(wallet);
-            return AddFundsResponse.Success(currencyToAddFundsTo);
+            return currencyToAddFundsTo;
         }
     }
 
-    public async Task<WithdrawFundsResponse> WithdrawFundsAsync(int walletId, string currencyCode, decimal amount)
+    public async Task<CurrencyData> WithdrawFundsAsync(int walletId, string currencyCode, decimal amount)
     {
         using (await _lockProvider.LockWalletAsync(walletId, _waitForLockTimeout))
         {
             var wallet = await _walletRepository.GetWalletAsync(walletId);
             if (wallet == null)
             {
-                return WithdrawFundsResponse.WalletNotFound();
+                throw new WalletNotFoundException(walletId);
             }
 
             var currencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(currencyCode);
             if (currencyData == null)
             {
-                return WithdrawFundsResponse.CurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(currencyCode);
             }
 
             var currencyToWithdrawFundsFrom = wallet.Currencies.FirstOrDefault(c => c.Code == currencyCode);
             if (currencyToWithdrawFundsFrom == null)
             {
-                return WithdrawFundsResponse.CurrencyNotInWallet();
+                throw new CurrencyNotInWalletException(currencyCode);
             }
 
             if (currencyToWithdrawFundsFrom.Amount < amount)
             {
-                return WithdrawFundsResponse.NotEnoughFunds(currencyToWithdrawFundsFrom);
+                throw new NotEnoughFundsException(currencyToWithdrawFundsFrom.Amount);
             }
 
             currencyToWithdrawFundsFrom.Amount -= amount;
 
             await _walletRepository.UpdateWalletAsync(wallet);
-            return WithdrawFundsResponse.Success(currencyToWithdrawFundsFrom);
+            return currencyToWithdrawFundsFrom;
         }
     }
 
-    public async Task<ExchangeFundsResponse> ExchangeFromFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
-        decimal amount)
+    public async Task<(CurrencyData finalizedSourceCurrency, CurrencyData finalizedTargetCurrency)> ExchangeFromFundsAsync(
+        int walletId, string sourceCurrencyCode, string targetCurrencyCode, decimal amount)
     {
         using (await _lockProvider.LockWalletAsync(walletId, _waitForLockTimeout))
         {
             var wallet = await _walletRepository.GetWalletAsync(walletId);
             if (wallet == null)
             {
-                return ExchangeFundsResponse.WalletNotFound();
+                throw new WalletNotFoundException(walletId);
             }
 
             var sourceCurrencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(sourceCurrencyCode);
             if (sourceCurrencyData == null)
             {
-                return ExchangeFundsResponse.SourceCurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(sourceCurrencyCode);
             }
 
             var targetCurrencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(targetCurrencyCode);
             if (targetCurrencyData == null)
             {
-                return ExchangeFundsResponse.TargetCurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(targetCurrencyCode);
             }
 
             var currencyToExchangeFundsFrom = wallet.Currencies.FirstOrDefault(c => c.Code == sourceCurrencyCode);
             if (currencyToExchangeFundsFrom == null)
             {
-                return ExchangeFundsResponse.SourceCurrencyNotInWallet();
+                throw new CurrencyNotInWalletException(sourceCurrencyCode);
             }
 
             if (currencyToExchangeFundsFrom.Amount < amount)
             {
-                return ExchangeFundsResponse.NotEnoughFunds(currencyToExchangeFundsFrom);
+                throw new NotEnoughFundsException(currencyToExchangeFundsFrom.Amount);
             }
 
             var currencyToExchangeFundsTo = GetOrCreateCurrencyInWallet(wallet, targetCurrencyData);
@@ -121,37 +121,37 @@ public class WalletTransactionService : IWalletTransactionService
             currencyToExchangeFundsTo.Amount += exchangeAmountInTargetCurrency;
 
             await _walletRepository.UpdateWalletAsync(wallet);
-            return ExchangeFundsResponse.Success(currencyToExchangeFundsFrom, currencyToExchangeFundsTo);
+            return (currencyToExchangeFundsFrom, currencyToExchangeFundsTo);
         }
     }
 
-    public async Task<ExchangeFundsResponse> ExchangeToFundsAsync(int walletId, string sourceCurrencyCode, string targetCurrencyCode,
-        decimal amount)
+    public async Task<(CurrencyData finalizedSourceCurrency, CurrencyData finalizedTargetCurrency)> ExchangeToFundsAsync(
+        int walletId, string sourceCurrencyCode, string targetCurrencyCode, decimal amount)
     {
         using (await _lockProvider.LockWalletAsync(walletId, _waitForLockTimeout))
         {
             var wallet = await _walletRepository.GetWalletAsync(walletId);
             if (wallet == null)
             {
-                return ExchangeFundsResponse.WalletNotFound();
+                throw new WalletNotFoundException(walletId);
             }
 
             var sourceCurrencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(sourceCurrencyCode);
             if (sourceCurrencyData == null)
             {
-                return ExchangeFundsResponse.SourceCurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(sourceCurrencyCode);
             }
 
             var targetCurrencyData = await _exchangeRatesRepository.GetCurrencyDataAsync(targetCurrencyCode);
             if (targetCurrencyData == null)
             {
-                return ExchangeFundsResponse.TargetCurrencyDoesNotExist();
+                throw new CurrencyNotFoundException(targetCurrencyCode);
             }
 
             var currencyToExchangeFundsFrom = wallet.Currencies.FirstOrDefault(c => c.Code == sourceCurrencyCode);
             if (currencyToExchangeFundsFrom == null)
             {
-                return ExchangeFundsResponse.SourceCurrencyNotInWallet();
+                throw new CurrencyNotInWalletException(sourceCurrencyCode);
             }
 
             //konwersja kwoty w docelowej walucie na PLN przez jej przelicznik
@@ -161,7 +161,7 @@ public class WalletTransactionService : IWalletTransactionService
 
             if (currencyToExchangeFundsFrom.Amount < exchangeAmountInSourceCurrency)
             {
-                return ExchangeFundsResponse.NotEnoughFunds(currencyToExchangeFundsFrom);
+                throw new NotEnoughFundsException(currencyToExchangeFundsFrom.Amount);
             }
 
             var currencyToExchangeFundsTo = GetOrCreateCurrencyInWallet(wallet, targetCurrencyData);
@@ -169,7 +169,7 @@ public class WalletTransactionService : IWalletTransactionService
             currencyToExchangeFundsTo.Amount += amount;
 
             await _walletRepository.UpdateWalletAsync(wallet);
-            return ExchangeFundsResponse.Success(currencyToExchangeFundsFrom, currencyToExchangeFundsTo);
+            return (currencyToExchangeFundsFrom, currencyToExchangeFundsTo);
         }
     }
     

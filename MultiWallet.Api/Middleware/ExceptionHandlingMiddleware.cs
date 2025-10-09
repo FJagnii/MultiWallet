@@ -35,6 +35,12 @@ public class ExceptionHandlingMiddleware
             WalletRepositoryException => ("Błąd danych portfeli", StatusCodes.Status500InternalServerError),
             ExchangeRatesRepositoryException => ("Błąd danych walut NBP", StatusCodes.Status500InternalServerError),
             WalletLockTimeoutException => ("Limit oczekiwania na portfel", StatusCodes.Status423Locked),
+            
+            WalletNotFoundException => (exception.Message, StatusCodes.Status404NotFound),
+            CurrencyNotFoundException => (exception.Message, StatusCodes.Status400BadRequest),
+            CurrencyNotInWalletException => (exception.Message, StatusCodes.Status400BadRequest),
+            NotEnoughFundsException => (exception.Message, StatusCodes.Status400BadRequest),
+            
             _ => ("Nieoczekiwany błąd", StatusCodes.Status500InternalServerError)
         };
 

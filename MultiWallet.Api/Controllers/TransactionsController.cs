@@ -2,7 +2,6 @@
 using MultiWallet.Api.Models;
 using MultiWallet.Api.Requests;
 using MultiWallet.Api.Services;
-using MultiWallet.Api.Services.WalletOperationResponses;
 
 namespace MultiWallet.Api.Controllers;
 
@@ -26,18 +25,7 @@ public class TransactionsController : ControllerBase
         }
         
         var fundsAdded = await _transactionService.AddFundsAsync(walletId, walletOperationRequest.CurrencyCode, walletOperationRequest.Amount);
-        
-        if (fundsAdded.ResponseCode == WalletOperationResponseCode.WalletNotFound)
-        {
-            return NotFound($"Nie znaleziono portfela o id: {walletId}");
-        }
-
-        if (fundsAdded.ResponseCode == WalletOperationResponseCode.CurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {walletOperationRequest.CurrencyCode}");
-        }
-
-        return Ok(fundsAdded.CurrentBalance);
+        return Ok(fundsAdded);
     }
 
     [HttpPost("withdrawFunds")]
@@ -49,28 +37,7 @@ public class TransactionsController : ControllerBase
         }
         
         var fundsWithdrawn = await _transactionService.WithdrawFundsAsync(walletId, withdrawFundsRequest.CurrencyCode, withdrawFundsRequest.Amount);
-        
-        if (fundsWithdrawn.ResponseCode == WalletOperationResponseCode.WalletNotFound)
-        {
-            return NotFound($"Nie znaleziono portfela o id: {walletId}");
-        }
-
-        if (fundsWithdrawn.ResponseCode == WalletOperationResponseCode.CurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {withdrawFundsRequest.CurrencyCode}");
-        }
-
-        if (fundsWithdrawn.ResponseCode == WalletOperationResponseCode.CurrencyNotInWallet)
-        {
-            return BadRequest($"Portfel nie zawiera środków w walucie: {withdrawFundsRequest.CurrencyCode}");
-        }
-
-        if (fundsWithdrawn.ResponseCode == WalletOperationResponseCode.NotEnoughFunds)
-        {
-            return BadRequest($"Brak wystarczających środków ({fundsWithdrawn.CurrentBalance.Amount})");
-        }
-
-        return Ok(fundsWithdrawn.CurrentBalance);
+        return Ok(fundsWithdrawn);
     }
 
     [HttpPost("exchangeFromFunds")]
@@ -88,33 +55,7 @@ public class TransactionsController : ControllerBase
 
         var fundsExchanged = await _transactionService.ExchangeFromFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
             exchangeFundsRequest.TargetCurrencyCode, exchangeFundsRequest.Amount);
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.WalletNotFound)
-        {
-            return NotFound($"Nie znaleziono portfela o id: {walletId}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.SourceCurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {exchangeFundsRequest.SourceCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.TargetCurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {exchangeFundsRequest.TargetCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.SourceCurrencyNotInWallet)
-        {
-            return BadRequest($"Portfel nie zawiera środków w walucie: {exchangeFundsRequest.SourceCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.NotEnoughFunds)
-        {
-            return BadRequest($"Brak wystarczających środków do wykonania wymiany ({fundsExchanged.CurrentSourceCurrencyBalance.Amount})");
-        }
-       
-        return Ok(new List<CurrencyData> {fundsExchanged.CurrentSourceCurrencyBalance, fundsExchanged.CurrentTargetCurrencyBalance});
+        return Ok(new List<CurrencyData> {fundsExchanged.finalizedSourceCurrency, fundsExchanged.finalizedTargetCurrency});
     }
 
     [HttpPost("exchangeToFunds")]
@@ -132,32 +73,6 @@ public class TransactionsController : ControllerBase
 
         var fundsExchanged = await _transactionService.ExchangeToFundsAsync(walletId, exchangeFundsRequest.SourceCurrencyCode,
             exchangeFundsRequest.TargetCurrencyCode, exchangeFundsRequest.Amount);
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.WalletNotFound)
-        {
-            return NotFound($"Nie znaleziono portfela o id: {walletId}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.SourceCurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {exchangeFundsRequest.SourceCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.TargetCurrencyDoesNotExist)
-        {
-            return BadRequest($"Nie istnieje waluta: {exchangeFundsRequest.TargetCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.SourceCurrencyNotInWallet)
-        {
-            return BadRequest($"Portfel nie zawiera środków w walucie: {exchangeFundsRequest.SourceCurrencyCode}");
-        }
-
-        if (fundsExchanged.ResponseCode == ExchangeFundsResponseCode.NotEnoughFunds)
-        {
-            return BadRequest($"Brak wystarczających środków źródłowych do wykonania wymiany ({fundsExchanged.CurrentSourceCurrencyBalance.Amount})");
-        }
-       
-        return Ok(new List<CurrencyData> {fundsExchanged.CurrentSourceCurrencyBalance, fundsExchanged.CurrentTargetCurrencyBalance});
+        return Ok(new List<CurrencyData> {fundsExchanged.finalizedSourceCurrency, fundsExchanged.finalizedTargetCurrency});
     }
 }
