@@ -28,21 +28,28 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        _logger.LogError(exception, "Złapano wyjątek w API");
-
-        var (problem, statusCode) = exception switch
+        var (problem, statusCode, isError) = exception switch
         {
-            WalletRepositoryException => ("Błąd danych portfeli", StatusCodes.Status500InternalServerError),
-            ExchangeRatesRepositoryException => ("Błąd danych walut NBP", StatusCodes.Status500InternalServerError),
-            WalletLockTimeoutException => ("Limit oczekiwania na portfel", StatusCodes.Status423Locked),
+            WalletRepositoryException => ("Błąd danych portfeli", StatusCodes.Status500InternalServerError, true),
+            ExchangeRatesRepositoryException => ("Błąd danych walut NBP", StatusCodes.Status500InternalServerError, true),
+           
+            WalletLockTimeoutException => ("Limit oczekiwania na portfel", StatusCodes.Status423Locked, false),
+            WalletNotFoundException => (exception.Message, StatusCodes.Status404NotFound, false),
+            CurrencyNotFoundException => (exception.Message, StatusCodes.Status400BadRequest, false),
+            CurrencyNotInWalletException => (exception.Message, StatusCodes.Status400BadRequest, false),
+            NotEnoughFundsException => (exception.Message, StatusCodes.Status400BadRequest, false),
             
-            WalletNotFoundException => (exception.Message, StatusCodes.Status404NotFound),
-            CurrencyNotFoundException => (exception.Message, StatusCodes.Status400BadRequest),
-            CurrencyNotInWalletException => (exception.Message, StatusCodes.Status400BadRequest),
-            NotEnoughFundsException => (exception.Message, StatusCodes.Status400BadRequest),
-            
-            _ => ("Nieoczekiwany błąd", StatusCodes.Status500InternalServerError)
+            _ => ("Nieoczekiwany błąd", StatusCodes.Status500InternalServerError, true)
         };
+
+        if (isError)
+        {
+            _logger.LogError(exception, "Złapano wyjątek w API");
+        }
+        else
+        {
+            _logger.LogWarning($"Złapano wyjątek w API :{exception.Message}");
+        }
 
         var problemDetails = new ProblemDetails
         {
