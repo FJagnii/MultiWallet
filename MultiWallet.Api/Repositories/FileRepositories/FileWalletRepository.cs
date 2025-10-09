@@ -10,7 +10,7 @@ public class FileWalletRepository : IWalletRepository
 {
     private readonly string _walletsFilePath;
     private List<Wallet> _wallets;
-    private static readonly object _lock = new();
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly ILogger<FileWalletRepository> _logger;
 
     public FileWalletRepository(IOptions<WalletsFileConfig> config, ILogger<FileWalletRepository> logger)
@@ -18,33 +18,32 @@ public class FileWalletRepository : IWalletRepository
         _walletsFilePath = config.Value.FilePath;
         _logger = logger;
 
-        lock (_lock)
+        if (File.Exists(_walletsFilePath))
         {
-            if (File.Exists(_walletsFilePath))
+            if (!ReadWalletsData())
             {
-                if (!ReadWalletsData())
-                {
-                    _wallets = new();
-                }
+                _wallets = new();
             }
-            else
+        }
+        else
+        {
+            _wallets = new List<Wallet>();
+            try
             {
-                _wallets = new List<Wallet>();
-                try
-                {
-                    using var fs = File.Create(_walletsFilePath);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Złapano wyjątek przy próbie stworzenia pliku portfeli");
-                }
+                using var fs = File.Create(_walletsFilePath);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Złapano wyjątek przy próbie stworzenia pliku portfeli");
             }
         }
     }
 
-    public Task CreateWalletAsync(Wallet wallet)
+    public async Task CreateWalletAsync(Wallet wallet)
     {
-        lock (_lock)
+        await _semaphore.WaitAsync();
+
+        try
         {
             int walletId = _wallets.Count;
             wallet.Id = walletId;
@@ -55,97 +54,108 @@ public class FileWalletRepository : IWalletRepository
 
             //próbujemy zapisać tę kopię
             //jeśli zapis się powiedzie - dopiero wtedy zaktualizujemy lokalny "cache" portfeli 
-            SaveWalletsData(walletsToSave);
+            await SaveWalletsDataAsync(walletsToSave);
             _wallets = walletsToSave;
-            return Task.CompletedTask;
         }
-    }
-
-    public Task<List<Wallet>> GetWalletsAsync()
-    {
-        lock (_lock)
+        finally
         {
-            return Task.FromResult(_wallets.Select(w => w.Clone()).ToList());
+            _semaphore.Release();
         }
     }
 
-    public Task<Wallet> GetWalletAsync(int id)
+    public async Task<List<Wallet>> GetWalletsAsync()
     {
-        lock (_lock)
+        await _semaphore.WaitAsync();
+        try
+        {
+            return _wallets.Select(w => w.Clone()).ToList();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task<Wallet> GetWalletAsync(int id)
+    {
+        await _semaphore.WaitAsync();
+        try
         {
             var wallet = _wallets.FirstOrDefault(w => w.Id == id);
-            return Task.FromResult(wallet?.Clone());
+            return wallet?.Clone();
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
-    public Task UpdateWalletAsync(Wallet updatedWallet)
+    public async Task UpdateWalletAsync(Wallet updatedWallet)
     {
-        lock (_lock)
+        await _semaphore.WaitAsync();
+        try
         {
             var walletsToSave = _wallets.Select(w => w.Clone()).ToList();
             var walletToUpdate = walletsToSave.FirstOrDefault(w => w.Id == updatedWallet.Id);
             walletToUpdate.Currencies = new(updatedWallet.Currencies);
 
-            SaveWalletsData(walletsToSave);
+            await SaveWalletsDataAsync(walletsToSave);
             _wallets = walletsToSave;
-            return Task.CompletedTask;
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
     private bool ReadWalletsData()
     {
-        lock (_lock)
+        try
         {
-            try
-            {
-                string json = File.ReadAllText(_walletsFilePath);
-                var wallets = JsonSerializer.Deserialize<List<Wallet>>(json);
-                _wallets = wallets ?? new();
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Złapano wyjątek przy próbie odczytu pliku portfeli");
-                return false;
-            }
+            string json = File.ReadAllText(_walletsFilePath);
+            var wallets = JsonSerializer.Deserialize<List<Wallet>>(json);
+            _wallets = wallets ?? new();
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Złapano wyjątek przy próbie odczytu pliku portfeli");
+            return false;
         }
     }
 
-    private void SaveWalletsData(List<Wallet> wallets)
+    private async Task SaveWalletsDataAsync(List<Wallet> wallets)
     {
-        lock (_lock)
+        string tmpWalletsFilePath = _walletsFilePath + ".tmp";
+        try
         {
-            string tmpWalletsFilePath = _walletsFilePath + ".tmp";
-            try
+            //serializujemy i wpierw zapisujemy do pliku tymczasowego, a na koniec atomowo podmieniamy plik tymczasowy na docelowy
+            //dzięki temu, jeśli na którymś etapie coś pójdzie nie tak, można złapać wyjątek, a plik portfeli nie zostanie zmieniony
+            string json = JsonSerializer.Serialize(wallets, new JsonSerializerOptions() { WriteIndented = true });
+            await File.WriteAllTextAsync(tmpWalletsFilePath, json);
+            File.Replace(tmpWalletsFilePath, _walletsFilePath, null);
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            throw new WalletRepositoryException("Brak dostępu przy zapisie pliku portfeli", e);
+        }
+        catch (IOException e)
+        {
+            throw new WalletRepositoryException("Błąd I/O przy zapisie pliku portfeli", e);
+        }
+        catch (NotSupportedException e)
+        {
+            throw new WalletRepositoryException("Problem z serializacją lub ścieżką do pliku przy zapisie pliku portfeli", e);
+        }
+        catch (Exception e)
+        {
+            throw new WalletRepositoryException("Nieoczekiwany błąd przy zapisie pliku portfeli", e);
+        }
+        finally
+        {
+            if (File.Exists(tmpWalletsFilePath))
             {
-                //serializujemy i wpierw zapisujemy do pliku tymczasowego, a na koniec atomowo podmieniamy plik tymczasowy na docelowy
-                //dzięki temu, jeśli na którymś etapie coś pójdzie nie tak, można złapać wyjątek, a plik portfeli nie zostanie zmieniony
-                string json = JsonSerializer.Serialize(wallets, new JsonSerializerOptions() { WriteIndented = true });
-                File.WriteAllText(tmpWalletsFilePath, json);
-                File.Replace(tmpWalletsFilePath, _walletsFilePath, null);
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                throw new WalletRepositoryException("Brak dostępu przy zapisie pliku portfeli", e);
-            }
-            catch (IOException e)
-            {
-                throw new WalletRepositoryException("Błąd I/O przy zapisie pliku portfeli", e);
-            }
-            catch (NotSupportedException e)
-            {
-                throw new WalletRepositoryException("Problem z serializacją lub ścieżką do pliku przy zapisie pliku portfeli", e);
-            }
-            catch (Exception e)
-            {
-                throw new WalletRepositoryException("Nieoczekiwany błąd przy zapisie pliku portfeli", e);
-            }
-            finally
-            {
-                if (File.Exists(tmpWalletsFilePath))
-                {
-                    File.Delete(tmpWalletsFilePath);
-                }
+                File.Delete(tmpWalletsFilePath);
             }
         }
     }
