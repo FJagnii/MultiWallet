@@ -52,7 +52,7 @@ public class ExceptionHandlingMiddleware
             Instance = context.Request.Path
         };
 
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/problem+json";
 
         await context.Response.WriteAsJsonAsync(problemDetails);
